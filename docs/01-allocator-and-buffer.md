@@ -43,6 +43,17 @@ size_t byte_size() const //本质：把隐藏的this从Buffer*变成const Buffer
 ```
 * const 引用只能调 const 函数：非 const 函数没做过只读承诺，编译器"只认徽章"，
   禁止它在只读场景被调用。所以 getter 必加 const：如实申报只读 + 换取全场景可用
+* 万能口诀：**const 贴着谁，谁就只读**——任何 const 场景只问"它贴着谁"
+* 星号左右规则：`const void* p`（const 在 * 左边）锁【指向的内容】，指针本身可换地址；
+  `void* const p`（const 在 * 右边）锁【指针本身】。memcpy 源参数用 `const void* src_ptr`：
+  源数据只读但指针可移动——每个 const 的位置都在精确声明语义
+* 尾部 const 是函数签名的一部分：子类 override 必须原样带上；类外定义
+  （alloc_cpu.cpp）也必须带——少写就变成"另一个函数"，链接报 undefined reference
+* 判据：不改任何成员 → 必加 const。例：allocate() 申请新内存返回给调用者，
+  没碰分配器自身成员，所以能加；const 管的是"这个对象"，不管"新申请的内存"
+* const 锁的是"本次访问的视角"而非对象本身——同一对象可同时被只读引用和普通引用看
+* mutable 逃生舱（第 17 课预告）：逻辑上不变、物理上要动的成员（缓存/计数器）
+  加 mutable，const 函数里也允许改
 - [x] protected 构造函数 = "只能当爹，不能单独存在"
 当给构造函数加上protected之后，这个class自身是不能直接实例化的，因为protected方法不能从外界调用，子类内部是可以继承这个方法的，而子类Buffer构造时必须先构造父类的部分，这次调用是发生在"家族内部"合法。
 - [ ] posix_memalign 与内存对齐（为什么 AVX 需要 32 字节对齐）
